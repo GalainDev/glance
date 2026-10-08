@@ -483,8 +483,7 @@ def colour_enabled():
     return "NO_COLOR" not in os.environ
 
 
-def render_stdin():
-    raw = sys.stdin.read()
+def render_stdin(raw):
     try:
         data = json.loads(raw) if raw.strip() else {}
     except ValueError:
@@ -589,16 +588,25 @@ def cli(args):
     return 2
 
 
+def run_cli(args):
+    try:
+        return cli(args)
+    except OSError as exc:
+        print("statusline: cannot write %s (%s)" % (exc.filename or prefs_path(), exc.strerror),
+              file=sys.stderr)
+        return 1
+
+
 def main():
     if len(sys.argv) > 1 or sys.stdin.isatty():
-        try:
-            return cli(sys.argv[1:])
-        except OSError as exc:
-            print("statusline: cannot write %s (%s)" % (exc.filename or prefs_path(), exc.strerror),
-                  file=sys.stderr)
-            return 1
+        return run_cli(sys.argv[1:])
+    raw = sys.stdin.read()
+    # Claude Code always sends session JSON; empty input means a person ran
+    # bare `statusline` without a tty (e.g. `! statusline` inside Claude Code).
+    if not raw.strip():
+        return run_cli([])
     try:
-        render_stdin()
+        render_stdin(raw)
     except Exception as exc:  # the bar must never go blank on a bug
         print("statusline: %s" % exc.__class__.__name__)
     return 0

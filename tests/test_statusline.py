@@ -195,11 +195,19 @@ class RenderTests(unittest.TestCase):
         self.assertNotIn("5h", out)
 
     def test_garbage_and_empty_stdin(self):
-        for raw in ("not json", "", "[1,2]", '"str"', '{"model": 5, "workspace": []}'):
+        for raw in ("not json", "[1,2]", '"str"', '{"model": 5, "workspace": []}'):
             proc = self.e.render(None, raw=raw)
             self.assertEqual(proc.returncode, 0, proc.stderr)
             self.assertTrue(lines(proc.stdout), "blank for %r" % raw)
             self.assertNotIn("Traceback", proc.stdout + proc.stderr)
+
+    def test_bare_command_without_tty_shows_settings(self):
+        # `! statusline` inside Claude Code: no args, no tty, empty stdin.
+        for raw in ("", "\n", "  "):
+            proc = self.e.render(None, raw=raw)
+            self.assertEqual(proc.returncode, 0, proc.stderr)
+            self.assertIn("emoji:   off", proc.stdout)
+            self.assertIn("Preview from", proc.stdout)
 
     def test_no_rate_limits_shows_ctx_only(self):
         data = full_input(self.e.project)
