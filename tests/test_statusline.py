@@ -208,6 +208,7 @@ class RenderTests(unittest.TestCase):
             self.assertEqual(proc.returncode, 0, proc.stderr)
             self.assertIn("emoji:   off", proc.stdout)
             self.assertIn("Preview from", proc.stdout)
+            self.assertNotIn("\x1b", proc.stdout)  # no raw escape codes in Claude's `!` pane
 
     def test_no_rate_limits_shows_ctx_only(self):
         data = full_input(self.e.project)

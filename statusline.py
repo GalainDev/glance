@@ -483,6 +483,12 @@ def colour_enabled():
     return "NO_COLOR" not in os.environ
 
 
+def cli_colour():
+    """Previews use colour only on a real terminal; Claude Code's `!` output
+    pane shows escape codes as text."""
+    return colour_enabled() and sys.stdout.isatty()
+
+
 def render_stdin(raw):
     try:
         data = json.loads(raw) if raw.strip() else {}
@@ -523,12 +529,12 @@ def preview(all_styles):
     print("Preview from %s:\n" % source)
     for name, style in styles:
         print("── %s ──" % name)
-        print(Renderer(data, style, colour_enabled()).render(width))
+        print(Renderer(data, style, cli_colour()).render(width))
         print()
     if all_styles:
         print("── bars ──")
         for name in BAR_STYLES:
-            row = Renderer(data, dict(prefs, compact=False, bars=name), colour_enabled()).render(width)
+            row = Renderer(data, dict(prefs, compact=False, bars=name), cli_colour()).render(width)
             gauges = [l for l in row.split("\n") if "ctx" in ANSI_RE.sub("", l)]
             print("%-6s %s" % (name, gauges[0] if gauges else row))
 
