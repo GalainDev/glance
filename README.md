@@ -56,6 +56,7 @@ Run from a terminal, or inside Claude Code with a `!` prefix
 | Command | Effect |
 |---|---|
 | `statusline` | current settings and a preview |
+| `statusline off` / `on` | hide or show the whole status line |
 | `statusline preview` | your last real session drawn in every style |
 | `statusline emoji [on\|off]` | emoji labels on the gauges |
 | `statusline compact [on\|off]` | everything on one row |

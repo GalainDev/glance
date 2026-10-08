@@ -6,6 +6,7 @@ Claude Code runs this with the session JSON on stdin (settings.json
 `statusLine`). Run it from a terminal to change preferences:
 
   statusline                    show preferences and a preview
+  statusline on|off             show or hide the whole status line
   statusline emoji [on|off]     emoji labels (toggles without an argument)
   statusline compact [on|off]   one row instead of three
   statusline spacing [on|off]   blank rows between rows and above the footer
@@ -33,9 +34,9 @@ SEGMENTS = (
     "fast", "cache", "ctx", "5h", "7d", "sid", "name", "duration", "lines", "cost",
     "style", "agent",
 )
-DEFAULT_PREFS = {"emoji": False, "compact": False, "spacing": False, "bars": "block",
+DEFAULT_PREFS = {"enabled": True, "emoji": False, "compact": False, "spacing": False, "bars": "block",
                  "hide": [], "show": []}
-TOGGLES = ("emoji", "compact", "spacing")
+TOGGLES = ("enabled", "emoji", "compact", "spacing")
 # Hidden unless `statusline show <seg>`. Prefs store only the user's changes
 # against this set, so changing a default later still takes effect.
 DEFAULT_HIDDEN = ("thinking", "name", "duration", "lines", "cost")
@@ -501,7 +502,10 @@ def render_stdin(raw):
                 f.write(raw)
         except OSError:
             pass
-    print(Renderer(data, load_prefs(), colour_enabled()).render(terminal_width()))
+    prefs = load_prefs()
+    if not prefs["enabled"]:
+        return  # no output: Claude Code hides the status line
+    print(Renderer(data, prefs, colour_enabled()).render(terminal_width()))
 
 
 # ── preferences CLI ──────────────────────────────────────────────────────────
@@ -541,6 +545,7 @@ def preview(all_styles):
 
 def show_status():
     prefs = load_prefs(apply_env=False)
+    print("bar:     %s" % ("on" if prefs["enabled"] else "off (statusline on)"))
     print("emoji:   %s" % ("on" if prefs["emoji"] else "off"))
     print("compact: %s" % ("on" if prefs["compact"] else "off"))
     print("spacing: %s" % ("on" if prefs["spacing"] else "off"))
@@ -569,6 +574,11 @@ def cli(args):
         prefs[cmd] = (rest[0] == "on") if rest else not prefs[cmd]
         save_prefs(prefs)
         print("%s %s — applies on the next status line refresh" % (cmd, "on" if prefs[cmd] else "off"))
+        return 0
+    if cmd in ("on", "off") and not rest:
+        prefs["enabled"] = cmd == "on"
+        save_prefs(prefs)
+        print("status line %s — applies on the next refresh" % cmd)
         return 0
     if cmd == "bars":
         if len(rest) != 1 or rest[0] not in BAR_STYLES:

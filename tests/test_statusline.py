@@ -272,6 +272,15 @@ class PrefsTests(unittest.TestCase):
         self.assertIn("emoji off", self.e.cli("emoji", "off").stdout)
         self.assertNotIn("⏳", "\n".join(self.rows()))
 
+    def test_whole_bar_off_and_on(self):
+        self.assertIn("status line off", self.e.cli("off").stdout)
+        proc = self.e.render(full_input(self.e.project))
+        self.assertEqual(proc.returncode, 0)
+        self.assertEqual(proc.stdout, "")  # Claude Code hides an empty status line
+        self.assertIn("bar:     off", self.e.cli("status").stdout)
+        self.e.cli("on")
+        self.assertEqual(len(self.rows()), 3)
+
     def test_spacing_toggle(self):
         self.assertIn("spacing on", self.e.cli("spacing").stdout)
         self.assertEqual(self.e.render(full_input(self.e.project)).stdout.count(SPACER), 3)
@@ -337,6 +346,7 @@ class PrefsTests(unittest.TestCase):
         self.assertEqual(self.e.cli("hide", "nope").returncode, 2)
         self.assertEqual(self.e.cli("emoji", "maybe").returncode, 2)
         self.assertEqual(self.e.cli("spacing", "half").returncode, 2)
+        self.assertEqual(self.e.cli("off", "now").returncode, 2)
         self.assertEqual(self.e.cli("frobnicate").returncode, 2)
 
     def test_unwritable_prefs_is_a_clean_error(self):
